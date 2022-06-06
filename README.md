@@ -35,7 +35,7 @@ In your template
 ## Props List
 
 | Name                         |     Type     | Description                                                                                                                                                                                              | Default  |
-| :--------------------------- | :----------: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------: |
+|:-----------------------------| :----------: |----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| :------: |
 | data                         |    Array     | Data to be exported.                                                                                                                                                                                     |
 | fields                       |    Object    | Fields inside the JSON Object that you want to export. If none provided, all properties in the JSON will be exported.                                                                                    |
 | export-fields (exportFields) |    Object    | Used to fix the problem with other components that use the variable fields, like vee-validate. exportFields works exactly like fields                                                                    |
@@ -51,6 +51,7 @@ In your template
 | before-finish                |   Function   | Callback to call a method right before the download box pops out, eg:hide loading progress                                                                                                               |
 | stringifyLongNum             |   Boolean    | stringify long number and decimal(solve the problem of loss of digital accuracy), default: false                                                                                                         |
 | escapeCsv                    |   Boolean    | This escapes CSV values in order to fix some excel problems with number fields. But this will wrap every csv data with **="** and **"**, to avoid that you have to set this prop to false. default: True |
+| emitBlob                     |   Boolean    | This will emmit the blob data. default: False                                                                                                                                                            |
 
 ## Example
 
