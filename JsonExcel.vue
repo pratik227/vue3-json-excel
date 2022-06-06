@@ -10,6 +10,11 @@ import {defineComponent} from 'vue'
 
 export default defineComponent({
   props: {
+    // If true, don't download but emit a Blob
+    emitBlob: {
+      type: Boolean,
+      default: false,
+    },
     // mime type [xls, csv]
     type: {
       type: String,
@@ -41,6 +46,10 @@ export default defineComponent({
     },
     // Title(s) for the data, could be a string or an array of strings (multiple titles)
     header: {
+      default: null,
+    },
+    // Title(s) for single column data, must be an array (ex: ['titleCol0',,TitleCol2])
+    perColumnsHeaders:  {
       default: null,
     },
     // Footer(s) for the data, could be a string or an array of strings (multiple footers)
@@ -104,10 +113,11 @@ export default defineComponent({
       if (typeof this.fetch === "function" || !data) data = await this.fetch();
 
       if (!data || !data.length) {
+        if (typeof this.beforeFinish === "function") await this.beforeFinish();
         return;
       }
 
-      let json = this.getProcessedJson(data, this.downloadFields);
+      let json = await this.getProcessedJson(data, this.downloadFields);
       if (this.type === "html") {
         // this is mainly for testing
         return this.export(
@@ -134,7 +144,8 @@ export default defineComponent({
     export: async function (data, filename, mime) {
       let blob = this.base64ToBlob(data, mime);
       if (typeof this.beforeFinish === "function") await this.beforeFinish();
-      download(blob, filename, mime);
+      if (this.emitBlob) this.$emit("blob", blob);
+      else download(blob, filename, mime);
     },
     /*
 		jsonToXLS
@@ -157,6 +168,15 @@ export default defineComponent({
           header,
           '<tr><th colspan="' + colspan + '">${data}</th></tr>'
         );
+      }
+      // perColumnsHeaders
+      const perColumnsHeaders = this.perColumnsHeaders;
+      if(Array.isArray(perColumnsHeaders)) {
+          xlsData += "<tr>";
+          for (let pchKey in perColumnsHeaders) {
+              xlsData += "<th>" + perColumnsHeaders[pchKey] + "</th>";
+          }
+          xlsData += "</tr>";
       }
 
       //Fields
@@ -212,6 +232,17 @@ export default defineComponent({
         csvData.push(this.parseExtraData(header, "${data}\r\n"));
       }
 
+      // perColumnsHeaders
+      const perColumnsHeaders = this.perColumnsHeaders;
+      if(Array.isArray(perColumnsHeaders)) {
+          for (let pchKey in perColumnsHeaders) {
+              csvData.push(perColumnsHeaders[pchKey]);
+              csvData.push(",");
+          }
+          csvData.pop();
+          csvData.push("\r\n");
+      }
+
       //Fields
       for (let key in data[0]) {
         csvData.push(key);
@@ -248,18 +279,20 @@ export default defineComponent({
 		---------------
 		Get only the data to export, if no fields are set return all the data
 		*/
-    getProcessedJson(data, header) {
+    async getProcessedJson(data, header) {
       let keys = this.getKeys(data, header);
       let newData = [];
       let _self = this;
-      data.map(function (item, index) {
+      await data.reduce(async function (prev, current) {
+        await prev;
         let newItem = {};
         for (let label in keys) {
           let property = keys[label];
-          newItem[label] = _self.getValue(property, item);
+          newItem[label] = await _self.getValue(property, current);
         }
         newData.push(newItem);
-      });
+        return true;
+      }, []);
 
       return newData;
     },
@@ -292,18 +325,18 @@ export default defineComponent({
       return parseData;
     },
 
-    getValue(key, item) {
+    async getValue(key, item) {
       const field = typeof key !== "object" ? key : key.field;
       let indexes = typeof field !== "string" ? [] : field.split(".");
       let value = this.defaultValue;
 
       if (!field) value = item;
       else if (indexes.length > 1)
-        value = this.getValueFromNestedItem(item, indexes);
+        value = await this.getValueFromNestedItem(item, indexes);
       else value = this.parseValue(item[field]);
 
       if (key.hasOwnProperty("callback"))
-        value = this.getValueFromCallback(value, key.callback);
+        value = await this.getValueFromCallback(value, key.callback);
 
       return value;
     },
@@ -336,9 +369,9 @@ export default defineComponent({
       return this.parseValue(nestedItem);
     },
 
-    getValueFromCallback(item, callback) {
+    async getValueFromCallback(item, callback) {
       if (typeof callback !== "function") return this.defaultValue;
-      const value = callback(item);
+      const value = await callback(item);
       return this.parseValue(value);
     },
     parseValue(value) {
