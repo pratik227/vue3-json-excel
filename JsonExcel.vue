@@ -48,7 +48,7 @@ export default defineComponent({
     header: {
       default: null,
     },
-    // Title(s) for single column data, must be an array where key is the index of columns (ex: ['titleCol0',,TitleCol2])
+    // Title(s) for single column data, must be an array (ex: ['titleCol0',,TitleCol2])
     perColumnsHeaders:  {
       default: null,
     },
