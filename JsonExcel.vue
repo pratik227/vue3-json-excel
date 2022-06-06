@@ -252,7 +252,7 @@ export default defineComponent({
       let keys = this.getKeys(data, header);
       let newData = [];
       let _self = this;
-      await data.map(function (prev, current) {
+      await data.reduce(async function (prev, current) {
         await prev;
         let newItem = {};
         for (let label in keys) {
