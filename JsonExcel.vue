@@ -10,6 +10,11 @@ import {defineComponent} from 'vue'
 
 export default defineComponent({
   props: {
+    // If true, don't download but emit a Blob
+    emitBlob: {
+      type: Boolean,
+      default: false,
+    },
     // mime type [xls, csv]
     type: {
       type: String,
@@ -104,6 +109,7 @@ export default defineComponent({
       if (typeof this.fetch === "function" || !data) data = await this.fetch();
 
       if (!data || !data.length) {
+        if (typeof this.beforeFinish === "function") await this.beforeFinish();
         return;
       }
 
@@ -134,7 +140,8 @@ export default defineComponent({
     export: async function (data, filename, mime) {
       let blob = this.base64ToBlob(data, mime);
       if (typeof this.beforeFinish === "function") await this.beforeFinish();
-      download(blob, filename, mime);
+      if (this.emitBlob) this.$emit("blob", blob);
+      else download(blob, filename, mime);
     },
     /*
 		jsonToXLS
