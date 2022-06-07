@@ -6,7 +6,7 @@ If this helped you in any way, you can contribute to this project for long term 
 
 Be sure to check out my sponsor page.
 
-Thank you so much!!!
+Thank you so much!!! 
 
 # JSON to Excel for VUE 3
 
