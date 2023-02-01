@@ -1,6 +1,6 @@
 {
   "name": "vue-json-excel3",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Download your JSON as an excel or CSV file directly from the browser",
   "main": "dist/vue-json-excel.umd.js",
   "module": "dist/vue-json-excel.esm.js",
@@ -25,7 +25,7 @@
     "download",
     "component"
   ],
-  "author": "Jose Javier Espinoza",
+  "author": "Pratik Patel",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/pratik227/vue3-json-excel/issues"
