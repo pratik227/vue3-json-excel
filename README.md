@@ -330,7 +330,3 @@ when using callback functions in the fields description, you have three option t
 ## License
 
 MIT
-
-#### Status
-
-This project is in an early stage of development. Any contribution is welcome :D
