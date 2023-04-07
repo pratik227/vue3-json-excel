@@ -174,6 +174,15 @@ var download = createCommonjsModule(function (module, exports) {
 
 var script = vue.defineComponent({
   props: {
+    // If true, don't download but emit a Blob
+    emitBlob: {
+      type: Boolean,
+      default: false,
+    },
+    debounce: {
+      type: Number,
+      default: 500,
+    },
     // mime type [xls, csv]
     type: {
       type: String,
@@ -205,6 +214,10 @@ var script = vue.defineComponent({
     },
     // Title(s) for the data, could be a string or an array of strings (multiple titles)
     header: {
+      default: null,
+    },
+    // Title(s) for single column data, must be an array (ex: ['titleCol0',,TitleCol2])
+    perColumnsHeaders: {
       default: null,
     },
     // Footer(s) for the data, could be a string or an array of strings (multiple footers)
@@ -246,6 +259,11 @@ var script = vue.defineComponent({
       default: false,
     },
   },
+  setup(){
+    return {
+      isDisabled: vue.ref(false)
+    }
+  },
   computed: {
     // unique identifier
     idName() {
@@ -261,36 +279,62 @@ var script = vue.defineComponent({
   },
   methods: {
     async generate() {
-      if (typeof this.beforeGenerate === "function") {
-        await this.beforeGenerate();
-      }
-      let data = this.data;
-      if (typeof this.fetch === "function" || !data) data = await this.fetch();
 
-      if (!data || !data.length) {
-        return;
+       if (this.isDisabled) {
+        return; // return early if button is disabled
       }
+      this.isDisabled = true;
+      const debounce = this.$props.debounce;
+      let timeoutId = null;
 
-      let json = this.getProcessedJson(data, this.downloadFields);
-      if (this.type === "html") {
-        // this is mainly for testing
-        return this.export(
-          this.jsonToXLS(json),
-          this.name.replace(".xls", ".html"),
-          "text/html"
-        );
-      } else if (this.type === "csv") {
-        return this.export(
-          this.jsonToCSV(json),
-          this.name.replace(".xls", ".csv"),
-          "application/csv"
-        );
-      }
-      return this.export(
-        this.jsonToXLS(json),
-        this.name,
-        "application/vnd.ms-excel"
-      );
+      return new Promise((resolve, reject) => {
+        const executeGenerate = async () => {
+          if (typeof this.beforeGenerate === "function") {
+            await this.beforeGenerate();
+          }
+          let data = this.data;
+          if (typeof this.fetch === "function" || !data) data = await this.fetch();
+
+          if (!data || !data.length) {
+            if (typeof this.beforeFinish === "function") await this.beforeFinish();
+            return;
+          }
+
+          let json = await this.getProcessedJson(data, this.downloadFields);
+          if (this.type === "html") {
+            // this is mainly for testing
+            return this.export(
+              this.jsonToXLS(json),
+              this.name.replace(".xls", ".html"),
+              "text/html"
+            );
+          } else if (this.type === "csv") {
+            return this.export(
+              this.jsonToCSV(json),
+              this.name.replace(".xls", ".csv"),
+              "application/csv"
+            );
+          }
+          return this.export(
+            this.jsonToXLS(json),
+            this.name,
+            "application/vnd.ms-excel"
+          );
+        };
+
+        const debouncedGenerate = () => {
+          let self = this;
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+          }
+          timeoutId = setTimeout(() => {
+            executeGenerate().then(resolve).catch(reject);
+            self.isDisabled = false;
+          }, debounce);
+        };
+
+        debouncedGenerate();
+      });
     },
     /*
 		Use downloadjs to generate the download link
@@ -298,7 +342,8 @@ var script = vue.defineComponent({
     export: async function (data, filename, mime) {
       let blob = this.base64ToBlob(data, mime);
       if (typeof this.beforeFinish === "function") await this.beforeFinish();
-      download(blob, filename, mime);
+      if (this.emitBlob) this.$emit("blob", blob);
+      else download(blob, filename, mime);
     },
     /*
 		jsonToXLS
@@ -321,6 +366,15 @@ var script = vue.defineComponent({
           header,
           '<tr><th colspan="' + colspan + '">${data}</th></tr>'
         );
+      }
+      // perColumnsHeaders
+      const perColumnsHeaders = this.perColumnsHeaders;
+      if (Array.isArray(perColumnsHeaders)) {
+        xlsData += "<tr>";
+        for (let pchKey in perColumnsHeaders) {
+          xlsData += "<th>" + perColumnsHeaders[pchKey] + "</th>";
+        }
+        xlsData += "</tr>";
       }
 
       //Fields
@@ -376,6 +430,17 @@ var script = vue.defineComponent({
         csvData.push(this.parseExtraData(header, "${data}\r\n"));
       }
 
+      // perColumnsHeaders
+      const perColumnsHeaders = this.perColumnsHeaders;
+      if (Array.isArray(perColumnsHeaders)) {
+        for (let pchKey in perColumnsHeaders) {
+          csvData.push(perColumnsHeaders[pchKey]);
+          csvData.push(",");
+        }
+        csvData.pop();
+        csvData.push("\r\n");
+      }
+
       //Fields
       for (let key in data[0]) {
         csvData.push(key);
@@ -412,18 +477,20 @@ var script = vue.defineComponent({
 		---------------
 		Get only the data to export, if no fields are set return all the data
 		*/
-    getProcessedJson(data, header) {
+    async getProcessedJson(data, header) {
       let keys = this.getKeys(data, header);
       let newData = [];
       let _self = this;
-      data.map(function (item, index) {
+      await data.reduce(async function (prev, current) {
+        await prev;
         let newItem = {};
         for (let label in keys) {
           let property = keys[label];
-          newItem[label] = _self.getValue(property, item);
+          newItem[label] = await _self.getValue(property, current);
         }
         newData.push(newItem);
-      });
+        return true;
+      }, []);
 
       return newData;
     },
@@ -456,18 +523,18 @@ var script = vue.defineComponent({
       return parseData;
     },
 
-    getValue(key, item) {
+    async getValue(key, item) {
       const field = typeof key !== "object" ? key : key.field;
       let indexes = typeof field !== "string" ? [] : field.split(".");
       let value = this.defaultValue;
 
       if (!field) value = item;
       else if (indexes.length > 1)
-        value = this.getValueFromNestedItem(item, indexes);
+        value = await this.getValueFromNestedItem(item, indexes);
       else value = this.parseValue(item[field]);
 
       if (key.hasOwnProperty("callback"))
-        value = this.getValueFromCallback(value, key.callback);
+        value = await this.getValueFromCallback(value, key.callback);
 
       return value;
     },
@@ -500,9 +567,9 @@ var script = vue.defineComponent({
       return this.parseValue(nestedItem);
     },
 
-    getValueFromCallback(item, callback) {
+    async getValueFromCallback(item, callback) {
       if (typeof callback !== "function") return this.defaultValue;
-      const value = callback(item);
+      const value = await callback(item);
       return this.parseValue(value);
     },
     parseValue(value) {
@@ -518,7 +585,7 @@ var script = vue.defineComponent({
       while (n--) {
         u8arr[n] = bstr.charCodeAt(n);
       }
-      return new Blob([u8arr], { type: mime });
+      return new Blob([u8arr], {type: mime});
     },
   }, // end methods
 });
@@ -528,12 +595,15 @@ const _hoisted_1 = ["id"];
 function render(_ctx, _cache, $props, $setup, $data, $options) {
   return (vue.openBlock(), vue.createElementBlock("div", {
     id: _ctx.idName,
-    onClick: _cache[0] || (_cache[0] = (...args) => (_ctx.generate && _ctx.generate(...args)))
+    onClick: _cache[0] || (_cache[0] = (...args) => (_ctx.generate && _ctx.generate(...args))),
+    style: vue.normalizeStyle(_ctx.isDisabled?{
+  'opacity': '0.5',
+  'pointer-events': 'none'}:{})
   }, [
     vue.renderSlot(_ctx.$slots, "default", {}, () => [
       vue.createTextVNode(" Download " + vue.toDisplayString(_ctx.name), 1 /* TEXT */)
     ])
-  ], 8 /* PROPS */, _hoisted_1))
+  ], 12 /* STYLE, PROPS */, _hoisted_1))
 }
 
 script.render = render;

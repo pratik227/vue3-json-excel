@@ -1,12 +1,14 @@
 <template>
-  <div :id="idName" @click="generate">
-    <slot> Download {{ name }} </slot>
+  <div :id="idName" @click="generate" :style="isDisabled?{
+  'opacity': '0.5',
+  'pointer-events': 'none'}:{}">
+    <slot> Download {{ name }}</slot>
   </div>
 </template>
 
 <script>
 import download from "downloadjs";
-import {defineComponent} from 'vue'
+import {defineComponent, ref} from 'vue'
 
 export default defineComponent({
   props: {
@@ -14,6 +16,10 @@ export default defineComponent({
     emitBlob: {
       type: Boolean,
       default: false,
+    },
+    debounce: {
+      type: Number,
+      default: 500,
     },
     // mime type [xls, csv]
     type: {
@@ -49,7 +55,7 @@ export default defineComponent({
       default: null,
     },
     // Title(s) for single column data, must be an array (ex: ['titleCol0',,TitleCol2])
-    perColumnsHeaders:  {
+    perColumnsHeaders: {
       default: null,
     },
     // Footer(s) for the data, could be a string or an array of strings (multiple footers)
@@ -91,6 +97,11 @@ export default defineComponent({
       default: false,
     },
   },
+  setup(){
+    return {
+      isDisabled: ref(false)
+    }
+  },
   computed: {
     // unique identifier
     idName() {
@@ -106,37 +117,62 @@ export default defineComponent({
   },
   methods: {
     async generate() {
-      if (typeof this.beforeGenerate === "function") {
-        await this.beforeGenerate();
-      }
-      let data = this.data;
-      if (typeof this.fetch === "function" || !data) data = await this.fetch();
 
-      if (!data || !data.length) {
-        if (typeof this.beforeFinish === "function") await this.beforeFinish();
-        return;
+       if (this.isDisabled) {
+        return; // return early if button is disabled
       }
+      this.isDisabled = true
+      const debounce = this.$props.debounce
+      let timeoutId = null;
 
-      let json = await this.getProcessedJson(data, this.downloadFields);
-      if (this.type === "html") {
-        // this is mainly for testing
-        return this.export(
-          this.jsonToXLS(json),
-          this.name.replace(".xls", ".html"),
-          "text/html"
-        );
-      } else if (this.type === "csv") {
-        return this.export(
-          this.jsonToCSV(json),
-          this.name.replace(".xls", ".csv"),
-          "application/csv"
-        );
-      }
-      return this.export(
-        this.jsonToXLS(json),
-        this.name,
-        "application/vnd.ms-excel"
-      );
+      return new Promise((resolve, reject) => {
+        const executeGenerate = async () => {
+          if (typeof this.beforeGenerate === "function") {
+            await this.beforeGenerate();
+          }
+          let data = this.data;
+          if (typeof this.fetch === "function" || !data) data = await this.fetch();
+
+          if (!data || !data.length) {
+            if (typeof this.beforeFinish === "function") await this.beforeFinish();
+            return;
+          }
+
+          let json = await this.getProcessedJson(data, this.downloadFields);
+          if (this.type === "html") {
+            // this is mainly for testing
+            return this.export(
+              this.jsonToXLS(json),
+              this.name.replace(".xls", ".html"),
+              "text/html"
+            );
+          } else if (this.type === "csv") {
+            return this.export(
+              this.jsonToCSV(json),
+              this.name.replace(".xls", ".csv"),
+              "application/csv"
+            );
+          }
+          return this.export(
+            this.jsonToXLS(json),
+            this.name,
+            "application/vnd.ms-excel"
+          );
+        };
+
+        const debouncedGenerate = () => {
+          let self = this;
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+          }
+          timeoutId = setTimeout(() => {
+            executeGenerate().then(resolve).catch(reject);
+            self.isDisabled = false
+          }, debounce);
+        };
+
+        debouncedGenerate();
+      });
     },
     /*
 		Use downloadjs to generate the download link
@@ -171,12 +207,12 @@ export default defineComponent({
       }
       // perColumnsHeaders
       const perColumnsHeaders = this.perColumnsHeaders;
-      if(Array.isArray(perColumnsHeaders)) {
-          xlsData += "<tr>";
-          for (let pchKey in perColumnsHeaders) {
-              xlsData += "<th>" + perColumnsHeaders[pchKey] + "</th>";
-          }
-          xlsData += "</tr>";
+      if (Array.isArray(perColumnsHeaders)) {
+        xlsData += "<tr>";
+        for (let pchKey in perColumnsHeaders) {
+          xlsData += "<th>" + perColumnsHeaders[pchKey] + "</th>";
+        }
+        xlsData += "</tr>";
       }
 
       //Fields
@@ -234,13 +270,13 @@ export default defineComponent({
 
       // perColumnsHeaders
       const perColumnsHeaders = this.perColumnsHeaders;
-      if(Array.isArray(perColumnsHeaders)) {
-          for (let pchKey in perColumnsHeaders) {
-              csvData.push(perColumnsHeaders[pchKey]);
-              csvData.push(",");
-          }
-          csvData.pop();
-          csvData.push("\r\n");
+      if (Array.isArray(perColumnsHeaders)) {
+        for (let pchKey in perColumnsHeaders) {
+          csvData.push(perColumnsHeaders[pchKey]);
+          csvData.push(",");
+        }
+        csvData.pop();
+        csvData.push("\r\n");
       }
 
       //Fields
@@ -387,7 +423,7 @@ export default defineComponent({
       while (n--) {
         u8arr[n] = bstr.charCodeAt(n);
       }
-      return new Blob([u8arr], { type: mime });
+      return new Blob([u8arr], {type: mime});
     },
   }, // end methods
 });
