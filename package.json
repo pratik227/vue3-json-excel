@@ -1,6 +1,6 @@
 {
   "name": "vue-json-excel3",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Download your JSON as an excel or CSV file directly from the browser",
   "main": "dist/vue-json-excel.umd.js",
   "module": "dist/vue-json-excel.esm.js",
@@ -11,6 +11,10 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/pratik227/vue3-json-excel.git"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/pratik227"
   },
   "keywords": [
     "vue",
