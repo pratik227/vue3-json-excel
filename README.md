@@ -328,6 +328,12 @@ when using callback functions in the fields description, you have three option t
     },
 ```
 
+<p align="center">
+  <a href="https://github.com/pratik227/static/blob/main/sponsors.svg">
+    <img src='https://github.com/pratik227/static/blob/main/sponsors.svg'/>
+  </a>
+</p>
+
 ## License
 
 MIT
