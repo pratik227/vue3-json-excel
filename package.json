@@ -1,6 +1,6 @@
 {
   "name": "vue-json-excel3",
-  "version": "1.0.2",
+  "version": "1.0.11",
   "description": "Download your JSON as an excel or CSV file directly from the browser",
   "main": "dist/vue-json-excel.umd.js",
   "module": "dist/vue-json-excel.esm.js",
@@ -34,11 +34,9 @@
   "bugs": {
     "url": "https://github.com/pratik227/vue3-json-excel/issues"
   },
-  "homepage": "https://vue-json-excel3.netlify.app/",
+  "homepage": "https://vue-json-excel.netlify.app/",
   "dependencies": {
-    "downloadjs": "^1.4.7",
-    "file-saver": "^2.0.5",
-    "xlsx": "^0.18.5"
+    "downloadjs": "^1.4.7"
   },
   "devDependencies": {
     "rollup": "^1.32.1",
