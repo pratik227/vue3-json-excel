@@ -2,6 +2,15 @@
 
 Old Document - https://vue-json-excel.netlify.app/ 
 
+> Note - for is there is error Cannot read property 'isCE' of null in remote component with slot using Module Federation #4344
+
+```js
+  chainWebpack(config) {
+    config.resolve.symlinks(false)
+    config.resolve.alias.set( 'vue', path.resolve('./node_modules/vue'))    
+  }
+```
+
 # Support
 
 If this helped you in any way, you can contribute to this project for long term survival by supporting me:
