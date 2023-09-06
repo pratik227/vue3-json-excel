@@ -23,5 +23,6 @@ export default {
         vue(),
         commonjs(),
         resolve()
-    ]
+    ],
+    external: ['vue']
 }

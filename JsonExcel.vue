@@ -9,6 +9,8 @@
 <script>
 import download from "downloadjs";
 import {defineComponent, ref} from 'vue'
+import * as XLSX from 'xlsx/xlsx.mjs';
+import saveAs from 'file-saver';
 
 export default defineComponent({
   props: {
@@ -152,6 +154,9 @@ export default defineComponent({
               this.name.replace(".xls", ".csv"),
               "application/csv"
             );
+          } else if (this.type === "xlsx") {
+            const xlsxBuffer = this.jsonToXLSX(json, this.worksheet);
+            return this.generateXLSX(xlsxBuffer, this.name);
           }
           return this.export(
             this.jsonToXLS(json),
@@ -183,6 +188,20 @@ export default defineComponent({
       if (this.emitBlob) this.$emit("blob", blob);
       else download(blob, filename, mime);
     },
+    generateXLSX(xlsxBuffer, fileName) {
+      function s2ab(s) {
+        let buf = new ArrayBuffer(s.length);
+        let view = new Uint8Array(buf);
+        for (let i = 0; i !== s.length; ++i) view[i] = s.charCodeAt(i) & 0xff;
+        return buf;
+      }
+
+      if (typeof xlsxBuffer === 'string') {
+        xlsxBuffer = s2ab(xlsxBuffer);
+      }
+      saveAs(new Blob([xlsxBuffer], {type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}), fileName);
+    },
+
     /*
 		jsonToXLS
 		---------------
@@ -252,6 +271,19 @@ export default defineComponent({
       return xlsTemp
         .replace("${table}", xlsData)
         .replace("${worksheet}", this.worksheet);
+    },
+    /*
+    jsonToXLS
+     */
+    jsonToXLSX(data, worksheet) {
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, worksheet || 'Sheet1');
+      const buf = XLSX.write(wb, {
+        type: 'buffer',
+        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+      return buf;
     },
     /*
 		jsonToCSV
