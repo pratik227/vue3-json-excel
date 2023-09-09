@@ -11,16 +11,6 @@ Old Document - https://vue-json-excel.netlify.app/
   }
 ```
 
-# Support
-
-If this helped you in any way, you can contribute to this project for long term survival by supporting me:
-
-### [💜 Support my open-source work on GitHub](https://github.com/sponsors/pratik227)
-
-Be sure to check out my sponsor page.
-
-Thank you so much!!!
-
 # JSON to Excel for VUE 3
 
 Download your JSON data as an Excel file directly from the browser.
@@ -338,6 +328,16 @@ when using callback functions in the fields description, you have three option t
         },
     },
 ```
+
+# Support
+
+If this helped you in any way, you can contribute to this project for long term survival by supporting me:
+
+### [💜 Support my open-source work on GitHub](https://github.com/sponsors/pratik227)
+
+Be sure to check out my sponsor page.
+
+Thank you so much!!!
 
 <p align="center">
   <a href="https://github.com/pratik227/static/blob/main/sponsors.svg">
