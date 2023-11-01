@@ -1,6 +1,6 @@
 {
   "name": "vue-json-excel3",
-  "version": "1.0.18",
+  "version": "1.0.19",
   "description": "Download your JSON as an excel or CSV file directly from the browser",
   "main": "dist/vue-json-excel.umd.js",
   "module": "dist/vue-json-excel.esm.js",
@@ -38,7 +38,7 @@
   "dependencies": {
     "downloadjs": "^1.4.7",
     "file-saver": "^2.0.5",
-    "xlsx": "^0.18.5"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.0/xlsx-0.20.0.tgz"
   },
   "devDependencies": {
     "rollup": "^1.32.1",
