@@ -1,3 +1,5 @@
+[![githelp.app shield](https://rbpwwcsvhmbmfiphokrm.supabase.co/storage/v1/object/public/public_resources/Badge2%20-%20round%20corners.svg?t=2023-12-11T13%3A11%3A05.524Z)](https://githelp.app/repos/vue3-json-excel)
+
 [![npm](https://img.shields.io/npm/dt/vue-json-excel3.svg)](https://www.npmjs.com/package/vue-json-excel3)
 
 Old Document - https://vue-json-excel.netlify.app/ 
