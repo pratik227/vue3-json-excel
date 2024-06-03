@@ -93,6 +93,10 @@ export default defineComponent({
       type: Boolean,
       default: true,
     },
+    rtl: {
+      type: Boolean,
+      default: false,
+    },
     // long number stringify
     stringifyLongNum: {
       type: Boolean,
@@ -275,12 +279,32 @@ export default defineComponent({
     /*
     jsonToXLS
      */
+    // jsonToXLSX(data, worksheet) {
+    //   const ws = XLSX.utils.json_to_sheet(data);
+    //   const wb = XLSX.utils.book_new();
+    //   XLSX.utils.book_append_sheet(wb, ws, worksheet || 'Sheet1');
+    //   const buf = XLSX.write(wb, {
+    //     type: 'buffer',
+    //     mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    //   });
+    //   return buf;
+    // },
     jsonToXLSX(data, worksheet) {
       const ws = XLSX.utils.json_to_sheet(data);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, worksheet || 'Sheet1');
+
+      if (this.rtl) {
+        wb.Workbook = {
+          Views: [
+            {RTL: true}
+          ]
+        };
+      }
+
       const buf = XLSX.write(wb, {
         type: 'buffer',
+        bookType: 'xlsx',
         mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
       return buf;

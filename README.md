@@ -68,6 +68,8 @@ In your template
 | escapeCsv                    |   Boolean    | This escapes CSV values in order to fix some excel problems with number fields. But this will wrap every csv data with **="** and **"**, to avoid that you have to set this prop to false. default: True |
 | emitBlob                     |   Boolean    | This will emmit the blob data. default: False                                                                                                                                                            |
 | debounce                     |    Number    | This is for debouce in download function                                                                                                                                                                 |    500   |
+| rtl                         |   Boolean    | This is for RTL support                                                                                                                                                                                  |  false   |
+
 
 ## Example
 
