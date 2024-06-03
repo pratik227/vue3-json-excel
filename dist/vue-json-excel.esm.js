@@ -18462,8 +18462,12 @@ var script = defineComponent({
       type: Boolean,
       default: false,
     },
+    formats: {
+      type: Object,
+      default: () => ({}),
+    },
   },
-  setup(){
+  setup() {
     return {
       isDisabled: ref(false)
     }
@@ -18484,7 +18488,7 @@ var script = defineComponent({
   methods: {
     async generate() {
 
-       if (this.isDisabled) {
+      if (this.isDisabled) {
         return; // return early if button is disabled
       }
       this.isDisabled = true;
@@ -18660,6 +18664,23 @@ var script = defineComponent({
             {RTL: true}
           ]
         };
+      }
+
+      // For column formatting trial
+
+      const formats = this.formats;
+      const range = utils.decode_range(ws['!ref']);
+
+      for (let C = range.s.c; C <= range.e.c; ++C) {
+        const col = utils.encode_col(C);
+        if (formats[col]) {
+          for (let R = range.s.r + 1; R <= range.e.r; ++R) { // +1 to skip the header row
+            const cell = ws[`${col}${R + 1}`];
+            if (cell) {
+              cell.z = formats[col];
+            }
+          }
+        }
       }
 
       const buf = writeSync(wb, {

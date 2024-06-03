@@ -102,8 +102,12 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    formats: {
+      type: Object,
+      default: () => ({}),
+    },
   },
-  setup(){
+  setup() {
     return {
       isDisabled: ref(false)
     }
@@ -124,7 +128,7 @@ export default defineComponent({
   methods: {
     async generate() {
 
-       if (this.isDisabled) {
+      if (this.isDisabled) {
         return; // return early if button is disabled
       }
       this.isDisabled = true
@@ -300,6 +304,23 @@ export default defineComponent({
             {RTL: true}
           ]
         };
+      }
+
+      // For column formatting trial
+
+      const formats = this.formats;
+      const range = XLSX.utils.decode_range(ws['!ref']);
+
+      for (let C = range.s.c; C <= range.e.c; ++C) {
+        const col = XLSX.utils.encode_col(C);
+        if (formats[col]) {
+          for (let R = range.s.r + 1; R <= range.e.r; ++R) { // +1 to skip the header row
+            const cell = ws[`${col}${R + 1}`];
+            if (cell) {
+              cell.z = formats[col];
+            }
+          }
+        }
       }
 
       const buf = XLSX.write(wb, {
