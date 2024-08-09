@@ -18619,6 +18619,10 @@
 	      type: Object,
 	      default: () => ({}),
 	    },
+	    widths: {
+	      type: Object,
+	      default: () => ({}),
+	    },
 	  },
 	  setup() {
 	    return {
@@ -18819,8 +18823,6 @@
 	        };
 	      }
 
-	      // For column formatting trial
-
 	      const formats = this.formats;
 	      const range = utils.decode_range(ws['!ref']);
 
@@ -18833,6 +18835,15 @@
 	              cell.z = formats[col];
 	            }
 	          }
+	        }
+	      }
+
+	      const widths = this.widths;
+	      for (let C = range.s.c; C <= range.e.c; ++C) {
+	        const col = utils.encode_col(C);
+	        if (widths[col]) {
+	          ws[`!cols`] = ws[`!cols`] || [];
+	          ws[`!cols`][C] = {wch: widths[col]};
 	        }
 	      }
 
