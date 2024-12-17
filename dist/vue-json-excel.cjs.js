@@ -18664,6 +18664,7 @@ var script = vue.defineComponent({
           }
 
           let json = await this.getProcessedJson(data, this.downloadFields);
+          if (typeof this.beforeFinish === "function") await this.beforeFinish();
           if (this.type === "html") {
             // this is mainly for testing
             return this.export(
